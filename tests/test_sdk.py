@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from datetime import date
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -187,6 +188,21 @@ def test_get_info_parses():
     assert d.expiry_date is not None
     assert d.expiration_date is not None
     assert d.lock_status is False
+
+
+@pytest.mark.parametrize(
+    ("raw", "want"),
+    [
+        ("2027-05-28", date(2027, 5, 28)),
+        ("10/15/2027", date(2027, 10, 15)),
+        ("15/10/2027", date(2027, 10, 15)),
+        ("not-a-date", None),
+    ],
+)
+def test_domain_expiry_date_tolerates_wire_formats(raw, want):
+    d = Domain(**{**_domain_data()["domain"], "expiry_date": raw})
+    assert d.expiry_date == want
+    assert (d.expiration_date.date() if d.expiration_date else None) == want
 
 
 def test_list_parses():

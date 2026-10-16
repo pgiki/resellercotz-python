@@ -32,7 +32,15 @@ def _to_date(value: Any) -> date | None:
     try:
         return date.fromisoformat(str(value).strip()[:10])
     except Exception:
-        return None
+        pass
+    # Registry dates also arrive slash-formatted; day-first patterns only
+    # fire when month-first fails (unambiguous values), mirroring go54.
+    for fmt in ("%m/%d/%Y", "%m-%d-%Y", "%d/%m/%Y", "%d-%m-%Y"):
+        try:
+            return datetime.strptime(str(value).strip()[:10], fmt).date()
+        except Exception:
+            continue
+    return None
 
 
 def _to_datetime(value: Any) -> datetime | None:
