@@ -190,6 +190,37 @@ def test_get_info_parses():
     assert d.lock_status is False
 
 
+def test_domain_endpoints_tolerate_null_status_fields():
+    domain = _domain_data()["domain"]
+    for key in (
+        "status",
+        "registry_status",
+        "redemption_state",
+        "in_redemption",
+        "lock_status",
+        "privacy_status",
+    ):
+        domain[key] = None
+
+    rc = _transport(
+        _ok_data({"domain": domain}),
+        _ok_data({"domains": [domain]}),
+        _ok_data({"domain": domain}),
+    )
+    info = rc.domains.get_info("example.co.tz")
+    listed = rc.domains.list(q="example.co.tz")
+    registered = rc.domains.register("example.co.tz", contact=_contact_fields())
+
+    for result in (info, listed[0], registered):
+        assert result.name == "example.co.tz"
+        assert result.status == ""
+        assert result.registry_status == ""
+        assert result.redemption_state == ""
+        assert result.in_redemption is False
+        assert result.lock_status is False
+        assert result.privacy_status is False
+
+
 @pytest.mark.parametrize(
     ("raw", "want"),
     [

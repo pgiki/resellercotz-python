@@ -136,6 +136,19 @@ class Domain(ResellerModel):
     privacy_status: bool = False
     last_synced_at: datetime | None = None
 
+    @field_validator("name", "status", "registry_status", "redemption_state", mode="before")
+    @classmethod
+    def _nullable_status_text(cls, value: Any) -> Any:
+        # The reseller API returns explicit nulls for status fields it has not
+        # populated yet; treat those the same as omitted optional status text.
+        return "" if value is None else value
+
+    @field_validator("in_redemption", "lock_status", "privacy_status", mode="before")
+    @classmethod
+    def _nullable_status_flags(cls, value: Any) -> Any:
+        # Newly registered domains can have unset flags in the API response.
+        return False if value is None else value
+
     @field_validator("renewal_price", "redemption_price", mode="before")
     @classmethod
     def _parse_price(cls, v: Any) -> Decimal | None:
